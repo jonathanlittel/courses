@@ -1,6 +1,7 @@
 from __future__ import division,print_function
 import math, os, json, sys, re
-import cPickle as pickle
+# import cPickle as pickle
+import six.moves.cPickle as pickle
 from glob import glob
 import numpy as np
 from matplotlib import pyplot as plt
@@ -32,6 +33,10 @@ from theano.tensor.signal import pool
 
 import keras
 from keras import backend as K
+# added from original course, for keras 2.x.x
+# may no longer be necessary after adding below to keras.json
+# "image_data_format": "channels_first",
+K.set_image_dim_ordering('th')
 from keras.utils.data_utils import get_file
 from keras.utils import np_utils
 from keras.utils.np_utils import to_categorical
@@ -39,10 +44,12 @@ from keras.models import Sequential, Model
 from keras.layers import Input, Embedding, Reshape, merge, LSTM, Bidirectional
 from keras.layers import TimeDistributed, Activation, SimpleRNN, GRU
 from keras.layers.core import Flatten, Dense, Dropout, Lambda
-from keras.regularizers import l2, activity_l2, l1, activity_l1
+# from keras.regularizers import l2, activity_l2, l1, activity_l1
+from keras.regularizers import l2, l1
 from keras.layers.normalization import BatchNormalization
 from keras.optimizers import SGD, RMSprop, Adam
-from keras.utils.layer_utils import layer_from_config
+# from keras.utils.layer_utils import layer_from_config
+from keras.layers import deserialize as layer_from_config
 from keras.metrics import categorical_crossentropy, categorical_accuracy
 from keras.layers.convolutional import *
 from keras.preprocessing import image, sequence
@@ -54,19 +61,10 @@ np.set_printoptions(precision=4, linewidth=100)
 
 
 to_bw = np.array([0.299, 0.587, 0.114])
-
 def gray(img):
-    if K.image_dim_ordering() == 'tf':
-        return np.rollaxis(img, 0, 1).dot(to_bw)
-    else:
-        return np.rollaxis(img, 0, 3).dot(to_bw)
-
+    return np.rollaxis(img,0,3).dot(to_bw)
 def to_plot(img):
-    if K.image_dim_ordering() == 'tf':
-        return np.rollaxis(img, 0, 1).astype(np.uint8)
-    else:
-        return np.rollaxis(img, 0, 3).astype(np.uint8)
-
+    return np.rollaxis(img, 0, 3).astype(np.uint8)
 def plot(img):
     plt.imshow(to_plot(img))
 
@@ -252,8 +250,8 @@ class MixIterator(object):
     def next(self, *args, **kwargs):
         if self.multi:
             nexts = [[next(it) for it in o] for o in self.iters]
-            n0 = np.concatenate([n[0] for n in nexts])
-            n1 = np.concatenate([n[1] for n in nexts])
+            n0s = np.concatenate([n[0] for n in o])
+            n1s = np.concatenate([n[1] for n in o])
             return (n0, n1)
         else:
             nexts = [next(it) for it in self.iters]

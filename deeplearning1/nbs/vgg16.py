@@ -6,6 +6,7 @@ import numpy as np
 from scipy import misc, ndimage
 from scipy.ndimage.interpolation import zoom
 
+from keras.utils.data_utils import get_file
 from keras import backend as K
 from keras.layers.normalization import BatchNormalization
 from keras.utils.data_utils import get_file
@@ -52,7 +53,8 @@ class Vgg16():
         model = self.model
         for i in range(layers):
             model.add(ZeroPadding2D((1, 1)))
-            model.add(Convolution2D(filters, 3, 3, activation='relu'))
+            model.add(Conv2D(filters, (3, 3), activation='relu'))
+            # model.add(Convolution2D(filters, (3, 3), activation='relu'))
         model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
 
@@ -112,8 +114,12 @@ class Vgg16():
 
 
     def fit(self, batches, val_batches, nb_epoch=1):
-        self.model.fit_generator(batches, samples_per_epoch=batches.nb_sample, nb_epoch=nb_epoch,
+        self.model.fit_generator(batches, steps_per_epoch=batches.nb_sample, nb_epoch=nb_epoch,
                 validation_data=val_batches, nb_val_samples=val_batches.nb_sample)
+    # original version:
+    # def fit(self, batches, val_batches, nb_epoch=1):
+    #     self.model.fit_generator(batches, samples_per_epoch=batches.nb_sample, nb_epoch=nb_epoch,
+    #             validation_data=val_batches, nb_val_samples=val_batches.nb_sample)
 
 
     def test(self, path, batch_size=8):
